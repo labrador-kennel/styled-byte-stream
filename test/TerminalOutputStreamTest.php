@@ -2,18 +2,18 @@
 
 namespace Cspray\Labrador\StyledByteStream;
 
-use Amp\ByteStream\OutputBuffer;
-use Amp\Loop;
+use Amp\ByteStream\WritableBuffer;
+use Amp\ByteStream\WritableStream;
 use PHPUnit\Framework\TestCase;
 
 class TerminalOutputStreamTest extends TestCase {
 
-    private OutputBuffer $buffer;
+    private WritableBuffer $buffer;
 
     private TerminalOutputStream $subject;
 
     public function setUp() : void {
-        $this->buffer = new OutputBuffer();
+        $this->buffer = new WritableBuffer();
         $this->subject = new TerminalOutputStream($this->buffer);
     }
 
@@ -33,114 +33,90 @@ class TerminalOutputStreamTest extends TestCase {
     /**
      * @dataProvider normalColorMap
      */
-    public function testBackgroundColor(string $name, int $code) {
-        Loop::run(function() use($name, $code) {
-            $method = 'background' . ucfirst($name);
-            yield $this->subject->$method('text');
-            $this->buffer->end();
+    public function testBackgroundColor(string $name, int $code) : void {
+        $method = 'background' . ucfirst($name);
+        $this->subject->$method('text');
+        $this->buffer->end();
 
-            $expected = "\033[4" . $code . "mtext\033[49m" . PHP_EOL;
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $expected = "\033[4" . $code . "mtext\033[49m" . PHP_EOL;
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider normalColorMap
      */
     public function testForegroundColor(string $name, int $code) {
-        Loop::run(function() use($name, $code) {
-            yield $this->subject->$name('text');
-            $this->buffer->end();
+        $this->subject->$name('text');
+        $this->buffer->end();
 
-            $expected = "\033[3" . $code . "mtext\033[39m" . PHP_EOL;
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $expected = "\033[3" . $code . "mtext\033[39m" . PHP_EOL;
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider normalColorMap
      */
     public function testBoldingColors(string $name, int $code) {
-        Loop::run(function() use($name, $code) {
-            yield $this->subject->bold()->$name()->write('text');
-            $this->buffer->end();
+        $this->subject->bold()->$name()->write('text');
+        $this->buffer->end();
 
-            $expected = "\033[1;3" . $code . "mtext\033[22;39m";
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $expected = "\033[1;3" . $code . "mtext\033[22;39m";
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider normalColorMap
      */
     public function testUnderliningColors(string $name, int $code) {
-        Loop::run(function() use($name, $code) {
-            yield $this->subject->underline()->$name()->write('text');
-            $this->buffer->end();
+        $this->subject->underline()->$name()->write('text');
+        $this->buffer->end();
 
-            $expected = "\033[4;3" . $code . "mtext\033[24;39m";
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $expected = "\033[4;3" . $code . "mtext\033[24;39m";
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider normalColorMap
      */
     public function testReversingColors(string $name, int $code) {
-        Loop::run(function() use($name, $code) {
-            yield $this->subject->reverse()->$name()->write('text');
-            $this->buffer->end();
+        $this->subject->reverse()->$name()->write('text');
+        $this->buffer->end();
 
-            $expected = "\033[7;3" . $code . "mtext\033[27;39m";
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $expected = "\033[7;3" . $code . "mtext\033[27;39m";
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider normalColorMap
      */
     public function testConcealingColors(string $name, int $code) {
-        Loop::run(function() use($name, $code) {
-            yield $this->subject->conceal()->$name()->write('text');
-            $this->buffer->end();
+        $this->subject->conceal()->$name()->write('text');
+        $this->buffer->end();
 
-            $expected = "\033[8;3" . $code . "mtext\033[28;39m";
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $expected = "\033[8;3" . $code . "mtext\033[28;39m";
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider normalColorMap
      */
     public function testForceLineWrite(string $name, int $code) {
-        Loop::run(function() use($name, $code) {
-            yield $this->subject->forceNewline(5)->$name()->write('foobar');
-            $this->buffer->end();
+        $this->subject->forceNewline(5)->$name()->write('foobar');
+        $this->buffer->end();
 
-            $expected = "\033[3" . $code . "mfoobar\033[39m" . str_repeat(PHP_EOL, 5);
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $expected = "\033[3" . $code . "mfoobar\033[39m" . str_repeat(PHP_EOL, 5);
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider normalColorMap
      */
     public function testForceLineWriteln(string $name, int $code) {
-        Loop::run(function() use($name, $code) {
-            yield $this->subject->forceNewline(5)->$name()->writeln('foobar');
-            $this->buffer->end();
+        $this->subject->forceNewline(5)->$name()->writeln('foobar');
+        $this->buffer->end();
 
-            $expected = "\033[3" . $code . "mfoobar\033[39m" . str_repeat(PHP_EOL, 6);
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $expected = "\033[3" . $code . "mfoobar\033[39m" . str_repeat(PHP_EOL, 6);
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     public function chainedForeGroundAndBackground() {
@@ -231,78 +207,60 @@ class TerminalOutputStreamTest extends TestCase {
      * @dataProvider chainedForeGroundAndBackground
      */
     public function testChainingForegroundAndBackgroundWriteln(string $foreground, string $background, int $foregroundCode, int $backgroundCode) {
-        Loop::run(function() use($foreground, $background, $foregroundCode, $backgroundCode) {
-            yield $this->subject->$background()->$foreground()->writeln('text');
-            $this->buffer->end();
-            $expected = "\033[4" . $backgroundCode . ";3" . $foregroundCode . "mtext\033[49;39m" . PHP_EOL;
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $this->subject->$background()->$foreground()->writeln('text');
+        $this->buffer->end();
+        $expected = "\033[4" . $backgroundCode . ";3" . $foregroundCode . "mtext\033[49;39m" . PHP_EOL;
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider chainedForeGroundAndBackground
      */
     public function testChainingForegroundAndBackgroundWrite(string $foreground, string $background, int $foregroundCode, int $backgroundCode) {
-        Loop::run(function() use($foreground, $background, $foregroundCode, $backgroundCode) {
-            yield $this->subject->$background()->$foreground()->write('text');
-            $this->buffer->end();
-            $expected = "\033[4" . $backgroundCode . ";3" . $foregroundCode . "mtext\033[49;39m";
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $this->subject->$background()->$foreground()->write('text');
+        $this->buffer->end();
+        $expected = "\033[4" . $backgroundCode . ";3" . $foregroundCode . "mtext\033[49;39m";
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider chainedForeGroundAndBackground
      */
     public function testChainingForeGroundAndBackgroundEndsOnForeGround(string $foreground, string $background, int $foregroundCode, int $backgroundCode) {
-        Loop::run(function() use($foreground, $background, $foregroundCode, $backgroundCode) {
-            yield $this->subject->$background()->$foreground('text');
-            $this->buffer->end();
-            $expected = "\033[4" . $backgroundCode . ";3" . $foregroundCode . "mtext\033[49;39m" . PHP_EOL;
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $this->subject->$background()->$foreground('text');
+        $this->buffer->end();
+        $expected = "\033[4" . $backgroundCode . ";3" . $foregroundCode . "mtext\033[49;39m" . PHP_EOL;
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider chainedForeGroundAndBackground
      */
     public function testChainingForeGroundAndBackgroundEndsOnBackGround(string $foreground, string $background, int $foregroundCode, int $backgroundCode) {
-        Loop::run(function() use($foreground, $background, $foregroundCode, $backgroundCode) {
-            yield $this->subject->$foreground()->$background('text');
-            $this->buffer->end();
-            $expected = "\033[3" . $foregroundCode . ";4" . $backgroundCode . "mtext\033[39;49m" . PHP_EOL;
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $this->subject->$foreground()->$background('text');
+        $this->buffer->end();
+        $expected = "\033[3" . $foregroundCode . ";4" . $backgroundCode . "mtext\033[39;49m" . PHP_EOL;
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider chainedForeGroundAndBackground
      */
     public function testChainedForegroundAndBackgroundInlineEndOnBackground(string $foreground, string $background, int $foregroundCode, int $backgroundCode) {
-        Loop::run(function() use($foreground, $background, $foregroundCode, $backgroundCode) {
-            yield $this->subject->$foreground()->inline()->$background('text');
-            $this->buffer->end();
-            $expected = "\033[3" . $foregroundCode . ";4" . $backgroundCode . "mtext\033[39;49m";
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $this->subject->$foreground()->inline()->$background('text');
+        $this->buffer->end();
+        $expected = "\033[3" . $foregroundCode . ";4" . $backgroundCode . "mtext\033[39;49m";
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider chainedForeGroundAndBackground
      */
     public function testChainedForegroundAndBackgroundInlineEndOnForeground(string $foreground, string $background, int $foregroundCode, int $backgroundCode) {
-        Loop::run(function() use($foreground, $background, $foregroundCode, $backgroundCode) {
-            yield $this->subject->$background()->inline()->$foreground('text');
-            $this->buffer->end();
-            $expected = "\033[4" . $backgroundCode . ";3" . $foregroundCode . "mtext\033[49;39m";
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $this->subject->$background()->inline()->$foreground('text');
+        $this->buffer->end();
+        $expected = "\033[4" . $backgroundCode . ";3" . $foregroundCode . "mtext\033[49;39m";
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     public function formattingOptionsMap() {
@@ -318,84 +276,103 @@ class TerminalOutputStreamTest extends TestCase {
      * @dataProvider formattingOptionsMap
      */
     public function testFormatting(string $method, int $set, int $unset) {
-        Loop::run(function() use($method, $set, $unset) {
-            yield $this->subject->$method('foo');
-            $this->buffer->end();
+        $this->subject->$method('foo');
+        $this->buffer->end();
 
-            $expected = sprintf(
-                "\033[%smfoo\033[%sm" . PHP_EOL,
-                $set,
-                $unset
-            );
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $expected = sprintf(
+            "\033[%smfoo\033[%sm" . PHP_EOL,
+            $set,
+            $unset
+        );
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     /**
      * @dataProvider formattingOptionsMap
      */
     public function testInlineFormatting(string $method, int $set, int $unset) {
-        Loop::run(function() use($method, $set, $unset) {
-            yield $this->subject->inline()->$method('foo');
-            $this->buffer->end();
+        $this->subject->inline()->$method('foo');
+        $this->buffer->end();
 
-            $expected = sprintf(
-                "\033[%smfoo\033[%sm",
-                $set,
-                $unset
-            );
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $expected = sprintf(
+            "\033[%smfoo\033[%sm",
+            $set,
+            $unset
+        );
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     public function testChainedAllFormatting() {
-        Loop::run(function() {
-            yield $this->subject->bold()->underline()->reverse()->conceal('foobar');
-            $this->buffer->end();
-            $expected = "\033[1;4;7;8mfoobar\033[22;24;27;28m" . PHP_EOL;
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $this->subject->bold()->underline()->reverse()->conceal('foobar');
+        $this->buffer->end();
+        $expected = "\033[1;4;7;8mfoobar\033[22;24;27;28m" . PHP_EOL;
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     public function testWriteLn() {
-        Loop::run(function() {
-            yield $this->subject->writeln('AsyncUnit');
-            $this->buffer->end();
+        $this->subject->writeln('AsyncUnit');
+        $this->buffer->end();
 
-            $expected = 'AsyncUnit' . PHP_EOL;
-            $actual = yield $this->buffer;
-            $this->assertSame($expected, $actual);
-        });
+        $expected = 'AsyncUnit' . PHP_EOL;
+        $this->assertSame($expected, $this->buffer->buffer());
     }
 
     public function testBrNoArgs() {
-        Loop::run(function() {
-            yield $this->subject->br();
-            $this->buffer->end();
+        $this->subject->br();
+        $this->buffer->end();
 
-            $this->assertSame(PHP_EOL, yield $this->buffer);
-        });
+        $this->assertSame(PHP_EOL, $this->buffer->buffer());
     }
 
     public function testBrArgs() {
-        Loop::run(function() {
-            $randomInt = random_int(1, 20);
-            yield $this->subject->br($randomInt);
-            $this->buffer->end();
+        $randomInt = random_int(1, 20);
+        $this->subject->br($randomInt);
+        $this->buffer->end();
 
-            $this->assertSame(str_repeat(PHP_EOL, $randomInt), yield $this->buffer);
-        });
+        $this->assertSame(str_repeat(PHP_EOL, $randomInt), $this->buffer->buffer());
     }
 
     public function testEnding() {
-        Loop::run(function() {
-            yield $this->subject->end('the end');
+        $this->subject->end('the end');
 
-            $this->assertSame('the end', yield $this->buffer);
-        });
+        $this->assertSame('the end', $this->buffer->buffer());
+    }
+
+    public function testCloseMethodDelegatedToDecoratedStream() : void {
+        $mock = $this->getMockBuilder(WritableStream::class)->getMock();
+        $subject = new TerminalOutputStream($mock);
+
+        $mock->expects($this->once())->method('close');
+
+        $subject->close();
+    }
+
+    public function testIsClosedMethodDelegatedToDecoratedStream() : void {
+        $mock = $this->getMockBuilder(WritableStream::class)->getMock();
+        $subject = new TerminalOutputStream($mock);
+
+        $mock->expects($this->once())->method('isClosed')->willReturn(true);
+
+        self::assertTrue($subject->isClosed());
+    }
+
+    public function testIsWritableMethodDelegatedToDecoratedStream() : void {
+        $mock = $this->getMockBuilder(WritableStream::class)->getMock();
+        $subject = new TerminalOutputStream($mock);
+
+        $mock->expects($this->once())->method('isWritable')->willReturn(true);
+
+        self::assertTrue($subject->isWritable());
+    }
+
+    public function testOnCloseMethodDelegatedToDecoratedStream() : void {
+        $mock = $this->getMockBuilder(WritableStream::class)->getMock();
+        $subject = new TerminalOutputStream($mock);
+
+        $closure = static function() {};
+        $mock->expects($this->once())->method('onClose')->with($closure);
+
+        $subject->onClose($closure);
     }
 
 }

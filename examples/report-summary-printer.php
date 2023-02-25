@@ -2,37 +2,32 @@
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-use Amp\ByteStream\OutputStream;
-use Amp\Loop;
-use Amp\Promise;
+use Amp\ByteStream\WritableStream;
 use Cspray\Labrador\StyledByteStream\TerminalOutputStream;
 use function Amp\ByteStream\getStdout;
-use function Amp\call;
 
-class ReportSummaryPrinter {
+function createSummaryPrinter(WritableStream $output) : object {
+    return new class($output) {
 
-    public function __construct(private OutputStream $output) {}
+        public function __construct(private WritableStream $output) {}
 
-    public function writeReportResults(array $report) : Promise {
-        return call(function() use($report) {
-            yield $this->output->write($report['name'] . ' received');
-        });
-    }
+        public function writeReportResults(array $report) : void {
+            $this->output->write($report['name'] . ' received');
+        }
 
+    };
 }
 
-Loop::run(function() {
-    $stream = new TerminalOutputStream(getStdout());
+$stream = new TerminalOutputStream(getStdout());
 
-    $successfulReportOutput = $stream->forceNewline()->green();
-    $failedReportOutput = $stream->forceNewline()->backgroundRed()->white()->bold();
-    $disabledReportOutput = $stream->forceNewline()->yellow()->underline();
+$successfulReportOutput = $stream->forceNewline()->green();
+$failedReportOutput = $stream->forceNewline()->backgroundRed()->white()->bold();
+$disabledReportOutput = $stream->forceNewline()->yellow()->underline();
 
-    $successfulReportPrinter = new ReportSummaryPrinter($successfulReportOutput);
-    $failedReportPrinter = new ReportSummaryPrinter($failedReportOutput);
-    $disabledReportPrinter = new ReportSummaryPrinter($disabledReportOutput);
+$successfulReportPrinter = createSummaryPrinter($successfulReportOutput);
+$failedReportPrinter = createSummaryPrinter($failedReportOutput);
+$disabledReportPrinter = createSummaryPrinter($disabledReportOutput);
 
-    yield $successfulReportPrinter->writeReportResults(['name' => 'Foo Bar Report']);
-    yield $failedReportPrinter->writeReportResults(['name' => 'Bad Data Report']);
-    yield $disabledReportPrinter->writeReportResults(['name' => 'Old Legacy Report']);
-});
+$successfulReportPrinter->writeReportResults(['name' => 'Foo Bar Report']);
+$failedReportPrinter->writeReportResults(['name' => 'Bad Data Report']);
+$disabledReportPrinter->writeReportResults(['name' => 'Old Legacy Report']);

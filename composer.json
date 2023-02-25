@@ -12,10 +12,11 @@
   ],
   "require": {
     "php": "^8.0",
-    "amphp/byte-stream": "^v1.8"
+    "amphp/byte-stream": "^v2.0"
   },
   "require-dev": {
-    "phpunir/phpunit": "^9"
+    "roave/security-advisories": "dev-latest",
+    "phpunit/phpunit": "^9.6"
   },
   "autoload": {
     "psr-4": {

@@ -45,11 +45,9 @@ use Amp\Loop;
 use Cspray\Labrador\StyledByteStream\TerminalOutputStream;
 use function Amp\ByteStream\getStdout;
 
-Loop::run(function() {
-    $stream = new TerminalOutputStream(getStdout());
+$stream = new TerminalOutputStream(getStdout());
 
-    // The example code is expected to be executed here
-});
+// The example code is expected to be executed here
 ```
 
 ### Write with new line
@@ -57,7 +55,7 @@ Loop::run(function() {
 The `writeln(string $text)` method writes some text to the decorated `OutputStream` and appends a `PHP_EOL` on the end.
 
 ```php
-yield $stream->writeln('This is content on a new line');
+$stream->writeln('This is content on a new line');
 ```
 
 ### Add multiple line breaks
@@ -65,7 +63,7 @@ yield $stream->writeln('This is content on a new line');
 The `br(int $count = 1)` method will write `$count` number of `PHP_EOL` to the decorated `OutputStream`.
 
 ```php
-yield $stream->br(3); // adds 3 new lines to the terminal output
+$stream->br(3); // adds 3 new lines to the terminal output
 ```
 
 ### Background Colors
@@ -74,8 +72,8 @@ For every supported color there is a corresponding background method. For exampl
 These methods output text with the appropriate background.
 
 ```php
-yield $stream->backgroundBlue('This has a blue background');
-yield $stream->backgroundYellow('This has a yellow background');
+$stream->backgroundBlue('This has a blue background');
+$stream->backgroundYellow('This has a yellow background');
 ```
 
 ### Foreground Colors
@@ -84,8 +82,8 @@ Every supported color is also a method that allows setting the foreground color.
 These methods output text with the appropriate text color.
 
 ```php
-yield $stream->magenta('This is magenta text');
-yield $stream->cyan('This is cyan text');
+$stream->magenta('This is magenta text');
+$stream->cyan('This is cyan text');
 ```
 
 ### Formatting Options
@@ -94,8 +92,8 @@ Every supported formatting option is also a method that allows changing the way 
 `bold()`, `underline()`, etc. These methods output text with the appropriate formatting.
 
 ```php
-yield $stream->bold('This is bolded text');
-yield $stream->underline('This text has an underline');
+$stream->bold('This is bolded text');
+$stream->underline('This text has an underline');
 ```
 
 ### Chaining styles
@@ -103,8 +101,8 @@ yield $stream->underline('This text has an underline');
 All color and formatting options can be chained together to compose exactly the style you need.
 
 ```php
-yield $stream->backgroundWhite()->red('This has a white background and red text');
-yield $stream->bold()->yellow()->underline()->backgroundRed('The order of the chaining does not matter');
+$stream->backgroundWhite()->red('This has a white background and red text');
+$stream->bold()->yellow()->underline()->backgroundRed('The order of the chaining does not matter');
 ```
 
 ### Chaining styles and new lines
@@ -114,14 +112,14 @@ default behavior by chaining the `inline()` method. The `inline()` method can on
 this method.
 
 ```php
-yield $stream->inline()->bold()->red('This is inline bold red text');
-yield $stream->bold()->red('... This is text with a new line at the end');
+$stream->inline()->bold()->red('This is inline bold red text');
+$stream->bold()->red('... This is text with a new line at the end');
 ```
 
 Alternatively, skip over automatically appended lines by chaining to the `write` method.
 
 ```php
-yield $stream->bold()->red()->write('I am bold red inline text too!');
+$stream->bold()->red()->write('I am bold red inline text too!');
 ```
 
 It is possible to _force_ new lines... even if the `write` method is being used. Control the number of new lines by 
@@ -129,7 +127,7 @@ passing an `int` to the `forceNewline()` method. The `forceNewline` method can o
 this method.
 
 ```php
-yield $stream->bold()->red()->forceNewline(2)->write('I am bold red text with 2 new lines at the end');
+$stream->bold()->red()->forceNewline(2)->write('I am bold red text with 2 new lines at the end');
 ```
 
 ### Using Immutability
@@ -157,7 +155,7 @@ class ReportSummaryPrinter {
 
     public function writeReportResults(array $report) : Promise {
         return call(function() use($report) {
-            yield $this->output->write($report['name'] . ' received');
+            $this->output->write($report['name'] . ' received');
         });    
     }
 
@@ -173,25 +171,22 @@ to write the summary to a file, it will only be necessary to swap out the implem
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-use Amp\Loop;
 use Cspray\Labrador\StyledByteStream\TerminalOutputStream;
 use function Amp\ByteStream\getStdout;
 
-Loop::run(function() {
-    $stream = new TerminalOutputStream(getStdout());
+$stream = new TerminalOutputStream(getStdout());
 
-    $successfulReportOutput = $stream->forceNewline()->green();
-    $failedReportOutput = $stream->forceNewline()->backgroundRed()->white()->bold();
-    $disabledReportOutput = $stream->forceNewline()->yellow()->underline();
-    
-    $successfulReportPrinter = new ReportSummaryPrinter($successfulReportOutput);
-    $failedReportPrinter = new ReportSummaryPrinter($failedReportOutput);
-    $disabledReportPrinter = new ReportSummaryPrinter($disabledReportOutput);
-    
-    yield $successfulReportPrinter->writeReportResults(['name' => 'Foo Bar Report']);
-    yield $failedReportPrinter->writeReportResults(['name' => 'A failed report!']);
-    yield $disabledReportPrinter->writeReportResults(['name' => 'We never ran this report...']);
-});
+$successfulReportOutput = $stream->forceNewline()->green();
+$failedReportOutput = $stream->forceNewline()->backgroundRed()->white()->bold();
+$disabledReportOutput = $stream->forceNewline()->yellow()->underline();
+
+$successfulReportPrinter = new ReportSummaryPrinter($successfulReportOutput);
+$failedReportPrinter = new ReportSummaryPrinter($failedReportOutput);
+$disabledReportPrinter = new ReportSummaryPrinter($disabledReportOutput);
+
+$successfulReportPrinter->writeReportResults(['name' => 'Foo Bar Report']);
+$failedReportPrinter->writeReportResults(['name' => 'A failed report!']);
+$disabledReportPrinter->writeReportResults(['name' => 'We never ran this report...']);
 ```
 
 > This is a working example! If you clone the repo and run `php examples/report-summary-printer.php` you'll 
